@@ -1,0 +1,70 @@
+name: Compile Standalone Desktop Apps
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch: # Allows you to manually trigger the build from GitHub UI
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # Spins up 3 concurrent isolated virtual environments
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' # Matches a highly stable version for system extensions
+
+    # Linux requires special system dependency packages to build UI elements (Tkinter/X11)
+    - name: Install Linux System UI Dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk
+
+    - name: Install Python Package Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install numpy pillow customtkinter opencv-python pyinstaller
+
+    # Finds the exact location of customtkinter files dynamically and sets env variable
+    - name: Locate CustomTkinter Path (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: bash
+      run: |
+        CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
+        echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
+
+    - name: Locate CustomTkinter Path (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
+        echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
+
+    # Note the separator syntax differences: Windows uses ';', macOS/Linux use ':'
+    - name: Compile App with PyInstaller (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        python -m PyInstaller --noconsole --onefile --add-data "${{ env.CTK_DIR }};customtkinter/" app.py
+
+    - name: Compile App with PyInstaller (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        python -m PyInstaller --noconsole --onefile --add-data "${{ env.CTK_DIR }}:customtkinter/" app.py
+
+    # Grabs the compiled executable file from the /dist directory and uploads it
+    - name: Upload Build Output Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: JetPhotos-Checker-${{ matrix.os }}
+        path: dist/*
