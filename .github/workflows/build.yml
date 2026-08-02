@@ -18,10 +18,10 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.14' # Matches a highly stable version for system extensions
 
@@ -64,7 +64,7 @@ jobs:
 
     # Grabs the compiled executable file from the /dist directory and uploads it
     - name: Upload Build Output Artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: JetPhotos-Checker-${{ matrix.os }}
         path: dist/*
