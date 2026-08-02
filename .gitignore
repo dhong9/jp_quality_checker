@@ -1,0 +1,22 @@
+# --- PyInstaller Build Artifacts ---
+build/
+dist/
+*.spec
+
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Python Cache / Compiled Bytecode ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- IDEs & System Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
