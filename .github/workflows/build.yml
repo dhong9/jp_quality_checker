@@ -69,13 +69,14 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: bash
       run: |
-        CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__)")
+        CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
         echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
+
 
     - name: Locate CustomTkinter Path (Unix / Linux / macOS)
       if: matrix.os != 'windows-latest'
       run: |
-        CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__)")
+        CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
         echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
 
     # 6. PYINSTALLER COMPILATION BANDS
