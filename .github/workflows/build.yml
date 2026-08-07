@@ -2,69 +2,72 @@ name: Compile Standalone Desktop Apps
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
   workflow_dispatch: # Allows you to manually trigger the build from GitHub UI
 
 jobs:
   build:
-    name: Build on ${{ matrix.os-display || matrix.os }}
+    name: Build on ${{ matrix.os-display }}
     runs-on: ${{ matrix.os }}
     
-    # Configure the build environment matrix
     strategy:
       matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
         include:
           - os: windows-latest
+            os-display: "windows-latest"
           - os: macos-latest
+            os-display: "macos-latest"
           - os: ubuntu-latest
             os-display: "ubuntu-latest"
           - os: ubuntu-latest
             os-display: "archlinux-latest"
-            # Mounts the official container image when running the Arch pipeline branch
             container: "archlinux:latest"
 
-    # Natively injects the container reference if defined for the specific matrix path
     container: ${{ matrix.container }}
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v7
 
-    # 1. ARCH LINUX ONLY: Sync Pacman and install native build dependencies
+    # ARCH LINUX ONLY: Sync Pacman and install native build dependencies
     - name: Install Arch Linux Native Dependencies
       if: matrix.os-display == 'archlinux-latest'
       run: |
         pacman -Syu --noconfirm
-        pacman -S --noconfirm python python-pip tk mesa libxext libxrender libx11
+        pacman -S --noconfirm python python-pip tk mesa libxext libxrender libx11 binutils gcc
 
-    # 2. UBUNTU LINUX ONLY: Install apt system UI requirements
+    # UBUNTU LINUX ONLY: Install apt system UI requirements
     - name: Install Ubuntu System UI Dependencies
       if: matrix.os-display == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-tk
 
-    # 3. SET UP PYTHON (Skiped on Arch since pacman provides Python globally inside its image)
+    # SET UP PYTHON (Skipped on Arch since pacman provides Python inside its container)
     - name: Set up Python Environment
       if: matrix.os-display != 'archlinux-latest'
       uses: actions/setup-python@v7
       with:
         python-version: '3.11'
 
-    # 4. INSTALL PYTHON PACKAGE TRACKS (Uses --break-system-packages on Arch due to PEP 668 restrictions)
+    # INSTALL PYTHON PACKAGE DEPENDENCIES (Uses venv exclusively for Arch image environment)
     - name: Install Python Package Dependencies
       run: |
-        python -m pip install --upgrade pip
         if [ "${{ matrix.os-display }}" = "archlinux-latest" ]; then
-          python -m pip install numpy pillow customtkinter opencv-python pyinstaller --break-system-packages
+          python -m venv /opt/venv
+          source /opt/venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install numpy pillow customtkinter opencv-python pyinstaller
         else
+          python -m pip install --upgrade pip
           python -m pip install numpy pillow customtkinter opencv-python pyinstaller
         fi
       shell: bash
 
-    # 5. RESOLVE CUSTOMTKINTER PATH ENVS
+    # RESOLVE CUSTOMTKINTER PATH ENVS
     - name: Locate CustomTkinter Path (Windows)
       if: matrix.os == 'windows-latest'
       shell: bash
@@ -72,14 +75,20 @@ jobs:
         CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
         echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
 
-
     - name: Locate CustomTkinter Path (Unix / Linux / macOS)
       if: matrix.os != 'windows-latest'
       run: |
-        CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
-        echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
+        if [ "${{ matrix.os-display }}" = "archlinux-latest" ]; then
+          source /opt/venv/bin/activate
+          CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
+          echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
+        else
+          CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__[0])")
+          echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
+        fi
+      shell: bash
 
-    # 6. PYINSTALLER COMPILATION BANDS
+    # PYINSTALLER COMPILATION BANDS
     - name: Compile App with PyInstaller (Windows)
       if: matrix.os == 'windows-latest'
       run: |
@@ -88,11 +97,17 @@ jobs:
     - name: Compile App with PyInstaller (Unix / Linux / macOS)
       if: matrix.os != 'windows-latest'
       run: |
-        python -m PyInstaller --noconsole --onefile --add-data "${{ env.CTK_DIR }}:customtkinter/" app.py
+        if [ "${{ matrix.os-display }}" = "archlinux-latest" ]; then
+          source /opt/venv/bin/activate
+          python -m PyInstaller --noconsole --onefile --add-data "${{ env.CTK_DIR }}:customtkinter/" app.py
+        else
+          python -m PyInstaller --noconsole --onefile --add-data "${{ env.CTK_DIR }}:customtkinter/" app.py
+        fi
+      shell: bash
 
-    # 7. EXPORT EXECUTABLES AS WORKFLOW ARTIFACTS
+    # EXPORT EXECUTABLES AS WORKFLOW ARTIFACTS
     - name: Upload Build Output Artifact
       uses: actions/upload-artifact@v7
       with:
-        name: JetPhotos-Checker-${{ matrix.os-display || matrix.os }}
+        name: JetPhotos-Checker-${{ matrix.os-display }}
         path: dist/*
