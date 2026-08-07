@@ -2,9 +2,9 @@ name: Compile Standalone Desktop Apps
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
   workflow_dispatch: # Allows you to manually trigger the build from GitHub UI
 
 jobs:
