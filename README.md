@@ -13,7 +13,7 @@ This tool performs high-performance image telemetry locally in memory, eliminati
 
 ![N7789A - horizion](./assets/N7889A_Horizon.png)
 
-The dashed green line is the horizon line, and the cyan line shows the estimated tilt. When estimating tilt by eye, vertical lines are more reliable.
+The dashed green line is the horizon line, and the cyan line shows the estimated tilt. The UI also displays the 0.7° tilt on the right side. When estimating tilt by eye, vertical lines are more reliable.
 
 *   **Sensor Dust Spot Equalizer:** Implements local contrast enhancement (CLAHE filter) and color inversion to simulate the exact screening technique used by reviewers. Hidden dust rings and halos in gradients like blue skies become instantly visible.
 *   **Native RGB & Luminance Histogram:** Real-time color channel frequency distribution calculated with OpenCV and rendered natively onto vectors—skipping heavy charting wrappers. It automatically highlights clipping profiles with a dedicated `Exposure Status` readout. Below is an image that got flagged as "borderline dark" with an accompanying histogram.
