@@ -11,7 +11,9 @@ This tool performs high-performance image telemetry locally in memory, eliminati
 *   **Center Grid (3x3+ with Subdivisions):** Overlays a standard 3x3 compositional grid, with the absolute center box divided into solid quadrants (2x2 sub-grid). Perfect for verifying that your fuselage or cockpit is dead-center.
 *   **Automated Horizon Guide:** Uses Canny Edge Detection and Hough Line Transforms via OpenCV to automatically calculate horizontal lines (runways, taxiways, hills) and estimate background tilt down to a tenth of a degree (`0.0°`). Displays an interactive vector angle guide for quick comparison.
 *   **Sensor Dust Spot Equalizer:** Implements local contrast enhancement (CLAHE filter) and color inversion to simulate the exact screening technique used by reviewers. Hidden dust rings and halos in gradients like blue skies become instantly visible.
-*   **Native RGB & Luminance Histogram:** Real-time color channel frequency distribution calculated with OpenCV and rendered natively onto vectors—skipping heavy charting wrappers. It automatically highlights clipping profiles with a dedicated `Exposure Status` readout.
+*   **Native RGB & Luminance Histogram:** Real-time color channel frequency distribution calculated with OpenCV and rendered natively onto vectors—skipping heavy charting wrappers. It automatically highlights clipping profiles with a dedicated `Exposure Status` readout. Below is an image that got flagged as "borderline dark" with an accompanying histogram.
+
+![N56HS - borderline dark](./assets/N56HS_BorderlineDark.png)
 
 ## 🛠️ Tech Stack & Architecture
 
