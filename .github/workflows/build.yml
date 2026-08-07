@@ -9,55 +9,51 @@ on:
 
 jobs:
   build:
-    name: Build on ${{ matrix.os-display }}
+    name: Build on ${{ matrix.os-display || matrix.os }}
     runs-on: ${{ matrix.os }}
     
+    # Configure the build environment matrix
     strategy:
       matrix:
-        # Step 1: Define the base operating systems list
-        os: [windows-latest, macos-latest, ubuntu-latest]
-        # Step 2: Set matching display names for standard jobs
         include:
           - os: windows-latest
-            os-display: "windows-latest"
           - os: macos-latest
-            os-display: "macos-latest"
           - os: ubuntu-latest
             os-display: "ubuntu-latest"
-          # Step 3: Append the Arch Linux container onto an Ubuntu runner node safely
           - os: ubuntu-latest
             os-display: "archlinux-latest"
+            # Mounts the official container image when running the Arch pipeline branch
             container: "archlinux:latest"
 
-    # Injects the container only if defined for that specific matrix loop
+    # Natively injects the container reference if defined for the specific matrix path
     container: ${{ matrix.container }}
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v7
 
-    # ARCH LINUX ONLY: Sync Pacman and install native build dependencies
+    # 1. ARCH LINUX ONLY: Sync Pacman and install native build dependencies
     - name: Install Arch Linux Native Dependencies
       if: matrix.os-display == 'archlinux-latest'
       run: |
         pacman -Syu --noconfirm
         pacman -S --noconfirm python python-pip tk mesa libxext libxrender libx11
 
-    # UBUNTU LINUX ONLY: Install apt system UI requirements
+    # 2. UBUNTU LINUX ONLY: Install apt system UI requirements
     - name: Install Ubuntu System UI Dependencies
       if: matrix.os-display == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-tk
 
-    # SET UP PYTHON (Skipped on Arch since pacman provides Python inside its container)
+    # 3. SET UP PYTHON (Skiped on Arch since pacman provides Python globally inside its image)
     - name: Set up Python Environment
       if: matrix.os-display != 'archlinux-latest'
       uses: actions/setup-python@v7
       with:
         python-version: '3.11'
 
-    # INSTALL PYTHON PACKAGE DEPENDENCIES (Overriding PEP 668 internally for Arch image environment)
+    # 4. INSTALL PYTHON PACKAGE TRACKS (Uses --break-system-packages on Arch due to PEP 668 restrictions)
     - name: Install Python Package Dependencies
       run: |
         python -m pip install --upgrade pip
@@ -68,7 +64,7 @@ jobs:
         fi
       shell: bash
 
-    # RESOLVE CUSTOMTKINTER PATH ENVS
+    # 5. RESOLVE CUSTOMTKINTER PATH ENVS
     - name: Locate CustomTkinter Path (Windows)
       if: matrix.os == 'windows-latest'
       shell: bash
@@ -82,7 +78,7 @@ jobs:
         CTK_PATH=$(python -c "import customtkinter; print(customtkinter.__path__)")
         echo "CTK_DIR=$CTK_PATH" >> $GITHUB_ENV
 
-    # PYINSTALLER COMPILATION BANDS
+    # 6. PYINSTALLER COMPILATION BANDS
     - name: Compile App with PyInstaller (Windows)
       if: matrix.os == 'windows-latest'
       run: |
@@ -93,9 +89,9 @@ jobs:
       run: |
         python -m PyInstaller --noconsole --onefile --add-data "${{ env.CTK_DIR }}:customtkinter/" app.py
 
-    # EXPORT EXECUTABLES AS WORKFLOW ARTIFACTS
+    # 7. EXPORT EXECUTABLES AS WORKFLOW ARTIFACTS
     - name: Upload Build Output Artifact
       uses: actions/upload-artifact@v7
       with:
-        name: JetPhotos-Checker-${{ matrix.os-display }}
+        name: JetPhotos-Checker-${{ matrix.os-display || matrix.os }}
         path: dist/*
