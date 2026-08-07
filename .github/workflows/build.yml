@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     # ARCH LINUX ONLY: Sync Pacman and install native build dependencies
     - name: Install Arch Linux Native Dependencies
@@ -53,7 +53,7 @@ jobs:
     # SET UP PYTHON (Skipped on Arch since pacman provides Python inside its container)
     - name: Set up Python Environment
       if: matrix.os-display != 'archlinux-latest'
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@vy
       with:
         python-version: '3.11'
 
@@ -95,7 +95,7 @@ jobs:
 
     # EXPORT EXECUTABLES AS WORKFLOW ARTIFACTS
     - name: Upload Build Output Artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@vy
       with:
         name: JetPhotos-Checker-${{ matrix.os-display }}
         path: dist/*
